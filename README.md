@@ -14,11 +14,13 @@ A physical button interface that remotely controls the AudioPlayer prop via ESP-
 
 | GPIO | Function | Notes |
 |------|----------|-------|
-| 4 | Play Button | Active LOW, internal pullup |
-| 5 | Stop Button | Active LOW, internal pullup |
-| 6 | Volume Up Button | Active LOW, internal pullup |
-| 7 | Volume Down Button | Active LOW, internal pullup |
-| 13 | Connection LED | HIGH = connected to AudioPlayer |
+| 35 | Play Button | Active LOW, internal pullup |
+| 36 | Stop Button | Active LOW, internal pullup |
+| 37 | Volume Up Button | Active LOW, internal pullup |
+| 38 | Volume Down Button | Active LOW, internal pullup |
+| 40 | Connection LED | HIGH = connected to AudioPlayer |
+| 8 | ACK LED | Flashes 200ms on ACK, low drive strength |
+| 3 | Speaker | 100ms beep on button press (2kHz) |
 | 48 | Heartbeat LED | Onboard RGB (status indicator) |
 
 ### Button Wiring
@@ -31,15 +33,22 @@ GPIO Pin ----+---- Button ---- GND
         (internal pullup)
 ```
 
-### Connection LED
+### LEDs
 
-Standard LED with current-limiting resistor (330-470 ohm) between GPIO 13 and GND.
+- **Connection LED (GPIO 40)**: Standard LED with current-limiting resistor (330-470 ohm)
+- **ACK LED (GPIO 8)**: Uses low drive strength (~5mA), flashes briefly when ACK received
+
+### Speaker
+
+Small piezo or speaker on GPIO 3. Produces a 2kHz beep for 100ms when any button is pressed.
 
 ## Features
 
 - **4 control buttons**: Play, Stop, Volume Up, Volume Down
+- **Audio feedback**: Speaker beeps on each button press
 - **Connection monitoring**: Pings AudioPlayer every 5 seconds
-- **Status LED**: Indicates connection to AudioPlayer
+- **Connection LED**: Solid when connected to AudioPlayer
+- **ACK LED**: Flashes briefly when AudioPlayer responds
 - **Heartbeat LED**: Shows device is running normally
 
 ## ESP-NOW Commands
