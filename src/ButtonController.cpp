@@ -1,6 +1,7 @@
 #include "ButtonController.h"
 #include "config.h"
 #include "modules/espnow_module.h"
+#include "driver/gpio.h"
 
 // Button state tracking
 static bool lastButtonState[4] = {true, true, true, true};  // HIGH = not pressed (pullup)
@@ -11,6 +12,17 @@ static const unsigned long DEBOUNCE_DELAY = 50;  // 50ms debounce
 static unsigned long lastAckTime = 0;
 static unsigned long lastPingTime = 0;
 static bool isConnected = false;
+
+// ACK LED tracking
+static unsigned long ackLedOnTime = 0;
+static bool ackLedActive = false;
+static const unsigned long ACK_LED_DURATION_MS = 200;
+
+// Speaker LEDC configuration
+static const int SPEAKER_LEDC_CHANNEL = 0;
+static const int SPEAKER_LEDC_RESOLUTION = 8;
+static unsigned long beepEndTime = 0;
+static bool beepActive = false;
 
 // Commands for each button
 static const char* BUTTON_COMMANDS[] = {"PLAY", "STOP", "VOL_UP", "VOL_DOWN"};
@@ -23,6 +35,19 @@ static void sendCommand(const char* cmd) {
   espnowBroadcast((const uint8_t*)cmd, strlen(cmd));
 }
 
+// Start a beep on the speaker
+static void startBeep() {
+  ledcWriteTone(SPEAKER_LEDC_CHANNEL, BEEP_FREQUENCY);
+  beepEndTime = millis() + BEEP_DURATION_MS;
+  beepActive = true;
+}
+
+// Stop the beep
+static void stopBeep() {
+  ledcWriteTone(SPEAKER_LEDC_CHANNEL, 0);
+  beepActive = false;
+}
+
 void buttonControllerInit() {
   // Initialize button pins with internal pullup
   for (int i = 0; i < 4; i++) {
@@ -33,17 +58,31 @@ void buttonControllerInit() {
   pinMode(CONNECTION_LED_PIN, OUTPUT);
   digitalWrite(CONNECTION_LED_PIN, LOW);  // Start off (not connected)
 
+  // Initialize ACK LED with low drive strength
+  pinMode(ACK_LED_PIN, OUTPUT);
+  digitalWrite(ACK_LED_PIN, LOW);
+  gpio_set_drive_capability((gpio_num_t)ACK_LED_PIN, GPIO_DRIVE_CAP_0);
+
+  // Initialize speaker with LEDC
+  ledcSetup(SPEAKER_LEDC_CHANNEL, BEEP_FREQUENCY, SPEAKER_LEDC_RESOLUTION);
+  ledcAttachPin(SPEAKER_PIN, SPEAKER_LEDC_CHANNEL);
+  ledcWriteTone(SPEAKER_LEDC_CHANNEL, 0);  // Start silent
+
   Serial.println("[ButtonController] Initialized");
-  Serial.print("  Play:     GPIO ");
+  Serial.print("  Play:       GPIO ");
   Serial.println(BTN_PLAY_PIN);
-  Serial.print("  Stop:     GPIO ");
+  Serial.print("  Stop:       GPIO ");
   Serial.println(BTN_STOP_PIN);
-  Serial.print("  Vol Up:   GPIO ");
+  Serial.print("  Vol Up:     GPIO ");
   Serial.println(BTN_VOLUP_PIN);
-  Serial.print("  Vol Down: GPIO ");
+  Serial.print("  Vol Down:   GPIO ");
   Serial.println(BTN_VOLDOWN_PIN);
-  Serial.print("  LED:      GPIO ");
+  Serial.print("  Conn LED:   GPIO ");
   Serial.println(CONNECTION_LED_PIN);
+  Serial.print("  ACK LED:    GPIO ");
+  Serial.println(ACK_LED_PIN);
+  Serial.print("  Speaker:    GPIO ");
+  Serial.println(SPEAKER_PIN);
 }
 
 void buttonControllerUpdate() {
@@ -62,6 +101,7 @@ void buttonControllerUpdate() {
         // Button pressed (LOW because of pullup)
         if (reading == LOW) {
           sendCommand(BUTTON_COMMANDS[i]);
+          startBeep();  // Audio feedback
         }
       }
     }
@@ -77,8 +117,19 @@ void buttonControllerUpdate() {
   bool wasConnected = isConnected;
   isConnected = (now - lastAckTime) < CONNECTION_TIMEOUT_MS;
 
-  // Update LED
+  // Update connection LED
   digitalWrite(CONNECTION_LED_PIN, isConnected ? HIGH : LOW);
+
+  // Handle ACK LED timeout
+  if (ackLedActive && (now - ackLedOnTime >= ACK_LED_DURATION_MS)) {
+    digitalWrite(ACK_LED_PIN, LOW);
+    ackLedActive = false;
+  }
+
+  // Handle beep timeout
+  if (beepActive && (now >= beepEndTime)) {
+    stopBeep();
+  }
 
   // Log connection state changes
   if (wasConnected && !isConnected) {
@@ -90,6 +141,12 @@ void buttonControllerUpdate() {
 
 void buttonControllerOnAck() {
   lastAckTime = millis();
+
+  // Flash ACK LED
+  digitalWrite(ACK_LED_PIN, HIGH);
+  ackLedOnTime = millis();
+  ackLedActive = true;
+
   Serial.println("[ButtonController] ACK received");
 }
 

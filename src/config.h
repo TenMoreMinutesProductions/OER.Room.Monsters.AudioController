@@ -102,16 +102,31 @@
 //                  BUTTON CONFIGURATION
 // ============================================================
 // All buttons are active LOW with internal pullup
-#define BTN_PLAY_PIN 4      // Play/resume audio
-#define BTN_STOP_PIN 5      // Stop audio
-#define BTN_VOLUP_PIN 6     // Volume up
-#define BTN_VOLDOWN_PIN 7   // Volume down
+#define BTN_PLAY_PIN 35     // Play/resume audio
+#define BTN_STOP_PIN 36     // Stop audio
+#define BTN_VOLUP_PIN 37    // Volume up
+#define BTN_VOLDOWN_PIN 38  // Volume down
 
 // ============================================================
 //                CONNECTION LED CONFIGURATION
 // ============================================================
 // LED is ON when connected to AudioPlayer, OFF when disconnected
-#define CONNECTION_LED_PIN 13
+#define CONNECTION_LED_PIN 40
+
+// ============================================================
+//                  ACK LED CONFIGURATION
+// ============================================================
+// LED flashes briefly (200ms) when ACK received from AudioPlayer
+// Uses low drive strength (GPIO_DRIVE_CAP_0) for minimal current
+#define ACK_LED_PIN 8
+
+// ============================================================
+//                  SPEAKER CONFIGURATION
+// ============================================================
+// Small speaker for button press feedback beep
+#define SPEAKER_PIN 3
+#define BEEP_FREQUENCY 2000  // Hz
+#define BEEP_DURATION_MS 100 // milliseconds
 
 // ============================================================
 //                  PING/ACK CONFIGURATION
