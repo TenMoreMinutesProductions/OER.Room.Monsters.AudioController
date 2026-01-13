@@ -1,7 +1,7 @@
 #include "loop.h"
 #include "config.h"
 #include "setup.h"
-#include "SampleFunction.h"
+#include "ButtonController.h"
 #include "esp_task_wdt.h"
 
 // MQTT runs on Core 1 (main loop)
@@ -12,16 +12,14 @@
 #if USE_OTA
 #endif
 
-// Forward declaration of reset handler (implemented in SampleFunction.cpp)
+// Forward declaration of reset handler (implemented in callbacks.cpp)
 extern void onPropReset();
 
 void loopMain() {
   // ============================================================
   // Core 0 Tasks (run automatically via FreeRTOS):
-  //   - WiFi reconnection
-  //   - OTA update handling
   //   - ESP-NOW (callbacks are event-driven)
-  //   - Reset button monitoring
+  //   - Heartbeat LED
   // ============================================================
 
   // Feed the watchdog - proves loop is running
@@ -49,7 +47,7 @@ void loopMain() {
   }
 
   // ============================================================
-  // Run puzzle/game logic below (Core 1)
+  // Button controller - reads buttons, sends commands, manages LED
   // ============================================================
-  SampleFunction();
+  buttonControllerUpdate();
 }

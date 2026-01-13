@@ -97,12 +97,26 @@
 // - No DAC pins on S3 - use I2S or external DAC for audio
 //
 // Safe general-purpose pins: 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
-#define INPUT_PIN 4
-#define OUTPUT_PIN 5
 
-// Reset button pin (active LOW with internal pullup)
-// Hold for 1 second to trigger prop reset
-// Comment out to disable physical reset button
-#define RESET_PIN 6
+// ============================================================
+//                  BUTTON CONFIGURATION
+// ============================================================
+// All buttons are active LOW with internal pullup
+#define BTN_PLAY_PIN 4      // Play/resume audio
+#define BTN_STOP_PIN 5      // Stop audio
+#define BTN_VOLUP_PIN 6     // Volume up
+#define BTN_VOLDOWN_PIN 7   // Volume down
+
+// ============================================================
+//                CONNECTION LED CONFIGURATION
+// ============================================================
+// LED is ON when connected to AudioPlayer, OFF when disconnected
+#define CONNECTION_LED_PIN 13
+
+// ============================================================
+//                  PING/ACK CONFIGURATION
+// ============================================================
+#define PING_INTERVAL_MS 5000      // Send PING every 5 seconds
+#define CONNECTION_TIMEOUT_MS 10000 // Consider disconnected after 10s without ACK
 
 #endif

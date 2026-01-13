@@ -1,5 +1,6 @@
 #include "setup.h"
 #include "config.h"
+#include "ButtonController.h"
 #include "esp_task_wdt.h"
 
 // Module includes
@@ -43,43 +44,6 @@ void propClearResetRequest() {
   _resetRequested = false;
 }
 
-// ============================================================
-//                 RESET BUTTON TASK (Core 0)
-// ============================================================
-#ifdef RESET_PIN
-static TaskHandle_t _resetTaskHandle = nullptr;
-
-// Monitors reset button on Core 0, independent of main loop
-static void resetButtonTask(void* param) {
-  unsigned long pressStart = 0;
-  bool wasPressed = false;
-
-  while (true) {
-    bool isPressed = (digitalRead(RESET_PIN) == LOW);
-
-    if (isPressed && !wasPressed) {
-      // Button just pressed
-      pressStart = millis();
-      wasPressed = true;
-    } else if (isPressed && wasPressed) {
-      // Button held - check for 1 second hold
-      if (millis() - pressStart >= 1000) {
-        Serial.println("[Reset] Button held for 1s - requesting reset");
-        propRequestReset();
-        // Wait for button release before allowing another reset
-        while (digitalRead(RESET_PIN) == LOW) {
-          vTaskDelay(50 / portTICK_PERIOD_MS);
-        }
-        wasPressed = false;
-      }
-    } else {
-      wasPressed = false;
-    }
-
-    vTaskDelay(50 / portTICK_PERIOD_MS);
-  }
-}
-#endif
 
 // ============================================================
 //                       LOGGING
@@ -256,12 +220,8 @@ void setupInit() {
   esp_task_wdt_add(NULL);
   Serial.println("[Watchdog] Initialized (60s timeout)");
 
-  // Initialize pins
-  pinMode(INPUT_PIN, INPUT);
-  pinMode(OUTPUT_PIN, OUTPUT);
-  #ifdef RESET_PIN
-    pinMode(RESET_PIN, INPUT_PULLUP);
-  #endif
+  // Initialize button controller (buttons + connection LED)
+  buttonControllerInit();
 
   // Initialize modules based on configuration
 
@@ -295,20 +255,6 @@ void setupInit() {
     #endif
     espnowSetReceiveCallback(onEspNowReceive);
     espnowSetSendCallback(onEspNowSend);
-  #endif
-
-  // Start reset button task on Core 0 (if RESET_PIN defined)
-  #ifdef RESET_PIN
-    xTaskCreatePinnedToCore(
-      resetButtonTask,
-      "ResetTask",
-      2048,
-      NULL,
-      1,
-      &_resetTaskHandle,
-      0  // Core 0
-    );
-    Serial.println("[Reset] Button task started on Core 0 (GPIO " + String(RESET_PIN) + ")");
   #endif
 
   // Print network status after all modules initialized

@@ -1,66 +1,70 @@
-# OER.Template.ESP32
+# OER.Room.Monsters.AudioController
 
-ESP32-S3 PlatformIO template for Otherworld Escape Rooms props.
+ESP32-S3 button controller for the Monsters escape room audio system.
 
 ## Purpose
 
-A starter template for building escape room props with ESP32-S3. Provides a modular architecture with WiFi, MQTT, mDNS, OTA updates, and ESP-NOW support—all conditionally compiled based on your needs.
-
-## Getting Started
-
-1. Clone or use this template to create a new prop repository
-2. Edit `src/config.h` - set `DEVICE_IDENTIFIER` and enable needed modules
-3. Add puzzle logic in `src/SampleFunction.cpp` or create new source files
-4. Build and upload
+A physical button interface that remotely controls the AudioPlayer prop via ESP-NOW. Provides play, stop, and volume controls with connection status indication.
 
 ## Hardware
 
-**Target Board:** ESP32-S3-DevKitC-1
+**Target Board:** ESP32-S3-DevKitC-1 (N8R2 variant)
 
-**Module:** ESP32-S3 N8R2
-- 8MB Flash (QIO mode)
-- 2MB PSRAM (QIO QSPI)
-- Dual-core Xtensa LX7 @ 240MHz
-- WiFi 802.11 b/g/n + Bluetooth 5 (LE)
-- Native USB support
+### Wiring
 
-**Common Sensors & Components:**
-- RFID readers (RC522, PN532)
-- Keypads and buttons
-- Reed switches and magnetic sensors
-- IR sensors and break beams
-- Load cells and pressure sensors
-- Rotary encoders
-- LED strips (WS2812B, etc.)
-- Servos and solenoids for locks
-- Audio modules (DFPlayer, DY-HV8F, etc.)
+| GPIO | Function | Notes |
+|------|----------|-------|
+| 4 | Play Button | Active LOW, internal pullup |
+| 5 | Stop Button | Active LOW, internal pullup |
+| 6 | Volume Up Button | Active LOW, internal pullup |
+| 7 | Volume Down Button | Active LOW, internal pullup |
+| 13 | Connection LED | HIGH = connected to AudioPlayer |
+| 48 | Heartbeat LED | Onboard RGB (status indicator) |
 
-## Modules
+### Button Wiring
 
-Five conditionally-compiled modules in `src/modules/`:
-
-| Module | Flag | Requires | Purpose |
-|--------|------|----------|---------|
-| WiFi | `USE_WIFI` | - | Auto-reconnect on Core 0 |
-| MQTT | `USE_MQTT` | WiFi | Pub/sub with auto-status |
-| mDNS | `USE_MDNS` | WiFi | `hostname.local` discovery |
-| OTA | `USE_OTA` | WiFi | Over-the-air firmware updates |
-| ESP-NOW | `USE_ESPNOW` | - | Low-latency P2P (host/client modes) |
-
-## Typical Prop Architecture
+Each button connects between the GPIO pin and GND. Internal pullup resistors are enabled, so no external resistors needed.
 
 ```
-┌─────────────┐     MQTT      ┌───────────┐
-│  ESP32-S3   │◄─────────────►│  Node-RED │
-│   Prop      │               │ Controller│
-└─────────────┘               └───────────┘
-      │                             │
-      │ ESP-NOW                     │ Dashboard
-      ▼                             ▼
-┌─────────────┐               ┌───────────┐
-│ Other Props │               │Game Master│
-└─────────────┘               └───────────┘
+GPIO Pin ----+---- Button ---- GND
+             |
+        (internal pullup)
 ```
+
+### Connection LED
+
+Standard LED with current-limiting resistor (330-470 ohm) between GPIO 13 and GND.
+
+## Features
+
+- **4 control buttons**: Play, Stop, Volume Up, Volume Down
+- **Connection monitoring**: Pings AudioPlayer every 5 seconds
+- **Status LED**: Indicates connection to AudioPlayer
+- **Heartbeat LED**: Shows device is running normally
+
+## ESP-NOW Commands
+
+Commands sent to AudioPlayer:
+
+| Command | Trigger |
+|---------|---------|
+| `PLAY` | Play button pressed |
+| `STOP` | Stop button pressed |
+| `VOL_UP` | Volume up button pressed |
+| `VOL_DOWN` | Volume down button pressed |
+| `PING` | Automatic every 5 seconds |
+
+AudioPlayer responds with `ACK` to confirm receipt.
+
+## Connection Status
+
+- **LED ON**: ACK received within last 10 seconds
+- **LED OFF**: No ACK received (AudioPlayer offline or out of range)
+
+## Modules Enabled
+
+- ESP-NOW (Host mode - broadcasts to all clients)
+- Heartbeat (RGB LED status indicator)
 
 ## Build Commands
 
@@ -69,17 +73,8 @@ pio run                  # Build
 pio run --target upload  # Upload to board
 pio run --target clean   # Clean build
 pio device monitor       # Serial monitor (115200 baud)
-
-# OTA upload (when enabled)
-pio run --target upload --upload-port DeviceName.local
 ```
 
-## Notes
+## Related Projects
 
-- The ESP32-S3 has different GPIO numbering than the original ESP32. Check pin assignments in `config.h`.
-- PSRAM is enabled by default via build flags. Use `ps_malloc()` for PSRAM allocations.
-- The S3 lacks DAC pins. Use I2S or external DAC for audio output.
-
-## Documentation
-
-See `template_use.md` for comprehensive module API documentation with code examples.
+- [OER.Room.Monsters.AudioPlayer](https://github.com/TenMoreMinutesProductions/OER.Room.Monsters.AudioPlayer) - Receives commands and controls DY-HV20T audio module
