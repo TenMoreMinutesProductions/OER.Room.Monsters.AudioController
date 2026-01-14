@@ -18,7 +18,7 @@
 #define USE_MDNS 0      // mDNS discovery (requires WiFi)
 #define USE_OTA 0       // Over-the-air updates (requires WiFi)
 #define USE_ESPNOW 1    // ESP-NOW communication
-#define USE_HEARTBEAT 1 // Heartbeat LED status indicator
+#define USE_HEARTBEAT 0 // Heartbeat LED status indicator
 
 // Dependency checks
 #if USE_MQTT && !USE_WIFI
@@ -134,7 +134,7 @@
 // ============================================================
 //                  PING/ACK CONFIGURATION
 // ============================================================
-#define PING_INTERVAL_MS 5000      // Send PING every 5 seconds
-#define CONNECTION_TIMEOUT_MS 10000 // Consider disconnected after 10s without ACK
+#define PING_INTERVAL_MS 8000       // Send PING every 8 seconds
+#define CONNECTION_TIMEOUT_MS 16000 // Consider disconnected after 16s without ACK
 
 #endif
