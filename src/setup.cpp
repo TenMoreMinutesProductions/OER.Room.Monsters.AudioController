@@ -223,6 +223,30 @@ void setupInit() {
   // Initialize button controller (buttons + connection LED)
   buttonControllerInit();
 
+  // Startup confirmation: play jingle and blink LED
+  Serial.println("[Startup] Playing startup jingle...");
+
+  // Play a quick rising 4-note jingle using LEDC channel 0 (same as speaker)
+  const int startupNotes[] = {523, 659, 784, 1047};  // C5, E5, G5, C6
+  const int noteDuration = 100;  // ms per note
+  for (int i = 0; i < 4; i++) {
+    ledcWriteTone(0, startupNotes[i]);
+    delay(noteDuration);
+  }
+  ledcWriteTone(0, 0);  // Silence
+
+  // Blink ACK LED (GPIO 8) for 3 seconds at 50ms intervals
+  Serial.println("[Startup] Blinking LED...");
+  unsigned long blinkEnd = millis() + 3000;
+  bool ledState = false;
+  while (millis() < blinkEnd) {
+    ledState = !ledState;
+    digitalWrite(ACK_LED_PIN, ledState ? HIGH : LOW);
+    delay(50);
+  }
+  digitalWrite(ACK_LED_PIN, LOW);  // End with LED off
+  Serial.println("[Startup] Complete.");
+
   // Initialize modules based on configuration
 
   #if USE_WIFI

@@ -86,17 +86,20 @@
 // ============================================================
 //                     PIN DEFINITIONS
 // ============================================================
-// ESP32-S3 Pin Notes:
-// - GPIO 0, 2, 3: Strapping pins (affect boot mode) - avoid for outputs
+// ESP32-S3 Pin Notes (YD-ESP32-S3 / DevKitC-1):
+// - GPIO 0, 3, 45, 46: Strapping pins (affect boot mode) - avoid for outputs
 // - GPIO 19, 20: Reserved for native USB - do not use
 // - GPIO 26-32: Not available on N8R2 (used for PSRAM/Flash)
-// - GPIO 33-37: Not available on S3
-// - GPIO 38-42: May be used for JTAG debugging
+// - GPIO 33-34: Do not exist on ESP32-S3 (chip architecture difference from ESP32)
+// - GPIO 35-37: Reserved for PSRAM on N8R2/N8R8 variants; available on N8 (no PSRAM)
+// - GPIO 38-42: Available for general use (38-39 fully available; 40-42 may overlap JTAG)
+// - GPIO 43-44: Reserved for UART0 (TX/RX)
+// - GPIO 48: Onboard RGB LED (directly usable for NeoPixel output)
 // - ADC1: GPIO 1-10 (safe to use with WiFi)
 // - ADC2: GPIO 11-20 (conflicts with WiFi - avoid for ADC when WiFi active)
 // - No DAC pins on S3 - use I2S or external DAC for audio
 //
-// Safe general-purpose pins: 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
+// Safe general-purpose pins: 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42, 47
 
 // ============================================================
 //                  BUTTON CONFIGURATION

@@ -101,7 +101,9 @@ All event handlers are in `callbacks.cpp`:
 
 ## ESP32-S3 Notes
 
-- Different GPIO numbering than original ESP32—verify pin mappings
+- Different GPIO numbering than original ESP32—see `config.h` for detailed pin notes
+- GPIO 33-34 do not exist on ESP32-S3; GPIO 35-37 reserved for PSRAM on N8R2
+- GPIO 38-42, 47 are available for general use
 - PSRAM enabled via build flags; use `ps_malloc()` for PSRAM allocations
 - No DAC pins—use I2S or external DAC for audio
 - Native USB support available
