@@ -16,7 +16,16 @@ static bool isConnected = false;
 // ACK LED tracking
 static unsigned long ackLedOnTime = 0;
 static bool ackLedActive = false;
-static const unsigned long ACK_LED_DURATION_MS = 200;
+static const unsigned long ACK_LED_DURATION_MS = 500;
+
+// Disconnected blink pattern: 5 short blinks every 2 seconds
+static const unsigned long DISCONNECT_BLINK_ON_MS = 50;
+static const unsigned long DISCONNECT_BLINK_OFF_MS = 50;
+static const int DISCONNECT_BLINK_COUNT = 5;
+static const unsigned long DISCONNECT_CYCLE_MS = 2000;
+static unsigned long disconnectCycleStart = 0;
+static int disconnectBlinkIndex = 0;
+static bool disconnectBlinkState = false;
 
 // Speaker LEDC configuration
 static const int SPEAKER_LEDC_CHANNEL = 0;
@@ -120,10 +129,43 @@ void buttonControllerUpdate() {
   // Update connection LED
   digitalWrite(CONNECTION_LED_PIN, isConnected ? HIGH : LOW);
 
-  // Handle ACK LED timeout
+  // Handle ACK LED timeout (only when connected)
   if (ackLedActive && (now - ackLedOnTime >= ACK_LED_DURATION_MS)) {
     digitalWrite(ACK_LED_PIN, LOW);
     ackLedActive = false;
+  }
+
+  // Handle disconnected blink pattern: 5 rapid blinks every 2 seconds
+  if (!isConnected && !ackLedActive) {
+    unsigned long cycleTime = now - disconnectCycleStart;
+
+    // Reset cycle every 2 seconds
+    if (cycleTime >= DISCONNECT_CYCLE_MS || disconnectCycleStart == 0) {
+      disconnectCycleStart = now;
+      disconnectBlinkIndex = 0;
+      cycleTime = 0;
+    }
+
+    // 5 blinks: ON-OFF-ON-OFF-ON-OFF-ON-OFF-ON-OFF (500ms total)
+    // Each ON and OFF period is 50ms
+    unsigned long blinkPeriod = DISCONNECT_BLINK_ON_MS + DISCONNECT_BLINK_OFF_MS;  // 100ms per blink
+    unsigned long totalBlinkTime = blinkPeriod * DISCONNECT_BLINK_COUNT;  // 500ms
+
+    if (cycleTime < totalBlinkTime) {
+      // Which blink are we in (0-4)?
+      int blinkNum = cycleTime / blinkPeriod;
+      // Are we in the ON or OFF portion of this blink?
+      unsigned long withinBlink = cycleTime % blinkPeriod;
+      bool shouldBeOn = (withinBlink < DISCONNECT_BLINK_ON_MS);
+
+      digitalWrite(ACK_LED_PIN, shouldBeOn ? HIGH : LOW);
+    } else {
+      // In the pause between blink sequences
+      digitalWrite(ACK_LED_PIN, LOW);
+    }
+  } else if (isConnected) {
+    // Connection restored - reset disconnect pattern
+    disconnectCycleStart = 0;
   }
 
   // Handle beep timeout
